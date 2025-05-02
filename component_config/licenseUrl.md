@@ -1,0 +1,1 @@
+https://github.com/keboola/component-turvo/blob/master/LICENSE.md

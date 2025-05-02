@@ -1,0 +1,96 @@
+{
+  "type": "object",
+  "title": "Treez Data Endpoints",
+  "required": ["endpoints", "sync_options"],
+  "properties": {
+    "endpoints": {
+      "type": "object",
+      "title": "Endpoints",
+      "options": {
+        "section": "Endpoints",
+        "collapsed": false
+      },
+      "propertyOrder": 1,
+      "properties": {
+        "tickets": {
+          "type": "boolean",
+          "title": "Tickets",
+          "format": "checkbox",
+          "propertyOrder": 1
+        },
+        "customers": {
+          "type": "boolean",
+          "title": "Customers",
+          "format": "checkbox",
+          "propertyOrder": 2
+        },
+        "caregivers": {
+          "type": "boolean",
+          "title": "Caregivers",
+          "format": "checkbox",
+          "propertyOrder": 3
+        },
+        "products": {
+          "type": "boolean",
+          "title": "Products",
+          "format": "checkbox",
+          "propertyOrder": 4
+        },
+        "order_status": {
+          "type": "array",
+          "title": "Order Status Filter",
+          "description": "Select which order statuses to download",
+          "items": {
+            "type": "string",
+            "enum": [
+              "VERIFICATION_PENDING",
+              "AWAITING_PROCESSING",
+              "IN_PROCESS",
+              "PACKED_READY",
+              "OUT_FOR_DELIVERY",
+              "COMPLETED",
+              "CANCELED"
+            ]
+          },
+          "format": "select",
+          "uniqueItems": true,
+          "propertyOrder": 5,
+          "options": {
+            "dependencies": {
+              "endpoints.tickets": true
+            }
+          }
+        }
+      }
+    },
+    "sync_options": {
+      "type": "object",
+      "title": "Synchronization Options",
+      "propertyOrder": 2,
+      "required": ["sync_mode", "date_from", "date_to"],
+      "properties": {
+        "sync_mode": {
+          "type": "string",
+          "title": "Sync Mode",
+          "enum": ["full_sync", "incremental"],
+          "default": "full_sync",
+          "propertyOrder": 1
+        },
+        "date_from": {
+          "type": "string",
+          "title": "Date From",
+          "default": "1 month ago",
+          "description": "Start date for sync. Supports natural language like '5 days ago', 'yesterday', or 'last run'.",
+          "propertyOrder": 2
+        },
+        "date_to": {
+          "type": "string",
+          "title": "Date To",
+          "default": "now",
+          "description": "End date for sync. Usually set to 'now'.",
+          "propertyOrder": 3
+        }
+      }
+    }
+  }
+}

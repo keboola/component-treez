@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "title": "Treez Extractor Configuration",
+  "required": ["authorization"],
+  "properties": {
+    "authorization": {
+      "type": "object",
+      "title": "Authorization",
+      "propertyOrder": 1,
+      "required": ["dispensary_name", "#client_id", "#api_key"],
+      "options": {
+        "section": "Authorization",
+        "collapsed": false
+      },
+      "properties": {
+        "dispensary_name": {
+          "type": "string",
+          "title": "Dispensary Name",
+          "propertyOrder": 1
+        },
+        "#client_id": {
+          "type": "string",
+          "title": "Client ID",
+          "format": "password",
+          "propertyOrder": 2
+        },
+        "#api_key": {
+          "type": "string",
+          "title": "API Key",
+          "format": "password",
+          "propertyOrder": 3
+        }
+      }
+    },
+    "debug": {
+      "type": "boolean",
+      "title": "Enable Debug Mode",
+      "default": false,
+      "propertyOrder": 2
+    }
+  }
+}
