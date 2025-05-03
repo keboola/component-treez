@@ -1,1 +1,1 @@
-https://github.com/keboola/component-turvo
+https://github.com/keboola/component-treez

@@ -1,1 +1,1 @@
-https://github.com/keboola/component-turvo/blob/master/README.md
+https://github.com/keboola/component-treez/blob/master/README.md
