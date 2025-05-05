@@ -55,10 +55,8 @@
           "format": "select",
           "uniqueItems": true,
           "propertyOrder": 5,
-          "options": {
-            "dependencies": {
-              "endpoints.tickets": true
-            }
+          "dependencies": {
+            "tickets": true
           }
         }
       }
