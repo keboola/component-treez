@@ -35,7 +35,7 @@ class Component(ComponentBase):
                     self,
                     name="tickets",
                     records=api_client.get_tickets_by_status(),
-                    primary_key=["id"],
+                    primary_key=["ticket_id"],
                     incremental=(config.sync_options.sync_mode == "incremental_sync")
                 )
 
@@ -45,7 +45,7 @@ class Component(ComponentBase):
                 self,
                 name="customers",
                 records=api_client.get_customers(),
-                primary_key=["id"],
+                primary_key=["email"],
                 incremental=(config.sync_options.sync_mode == "incremental_sync")
             )
 
@@ -55,7 +55,7 @@ class Component(ComponentBase):
                 self,
                 name="products",
                 records=api_client.get_products(),
-                primary_key=["id"],
+                primary_key=["product_id"],
                 incremental=(config.sync_options.sync_mode == "incremental_sync")
             )
 

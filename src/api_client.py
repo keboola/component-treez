@@ -1,3 +1,5 @@
+import json
+
 import requests
 import logging
 from typing import Generator, Dict, Any
@@ -32,28 +34,48 @@ class TreezAPIClient:
         response.raise_for_status()
         auth_data = response.json()
 
-        access_token = auth_data.get("accessToken")
+        access_token = auth_data.get("access_token")
         if not access_token:
             raise RuntimeError(f"Auth failed: {auth_data}")
         return access_token
 
     def get_tickets_by_status(self) -> Generator[Dict[str, Any], None, None]:
+        """
+        Streams ticket records grouped by status from Treez.
+        Matches actual API response structure: data["ticketList"].
+        """
         statuses = self.config.endpoints.order_status
+
         for status in statuses:
             page = 1
             while True:
                 url = f"{self.base_url}/ticket/status/{status}/page/{page}/pagesize/{DEFAULT_PAGE_SIZE}"
                 logging.debug(f"Requesting tickets: {url}")
-                response = requests.get(url, headers=self.headers)
-                response.raise_for_status()
-                data = response.json()
 
-                records = data.get("data")
-                if not isinstance(records, list) or not records:
+                try:
+                    response = requests.get(url, headers=self.headers)
+                    response.raise_for_status()
+                    data = response.json()
+                except Exception as e:
+                    logging.warning(f"Failed to fetch tickets for status '{status}' on page {page}: {e}")
+                    break
+
+                records = data.get("ticketList", [])
+
+                if not isinstance(records, list):
+                    logging.warning(
+                        "Unexpected ticket response format for status "
+                        f"'{status}':\n{json.dumps(data, indent=2)}"
+                    )
+                    break
+
+                if not records:
+                    logging.info(f"No more tickets for status '{status}' on page {page}.")
                     break
 
                 for record in records:
                     yield record
+
                 page += 1
 
     def get_customers(self) -> Generator[Dict[str, Any], None, None]:
@@ -78,38 +100,66 @@ class TreezAPIClient:
             page += 1
 
     def get_products(self) -> Generator[Dict[str, Any], None, None]:
+        """
+        Streams product records from the Treez API with pagination.
+        Matches response structure where products are under data["product_list"].
+        """
         page = 1
         while True:
             url = f"{self.base_url}/product/product_list?page={page}"
             logging.debug(f"Requesting products: {url}")
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            data = response.json()
 
-            records = data.get("data")
-            if not isinstance(records, list) or not records:
+            try:
+                response = requests.get(url, headers=self.headers)
+                response.raise_for_status()
+                data = response.json()
+            except Exception as e:
+                logging.warning(f"Failed to fetch products on page {page}: {e}")
+                break
+
+            product_container = data.get("data", {})
+            records = product_container.get("product_list", [])
+
+            if not isinstance(records, list):
+                logging.warning(f"Unexpected product response format:\n{json.dumps(data, indent=2)}")
+                break
+
+            if not records:
+                logging.info(f"No more product records at page {page}.")
                 break
 
             for record in records:
                 yield record
+
             page += 1
 
     def get_caregivers(self) -> Generator[Dict[str, Any], None, None]:
         """
         Fetches caregiver records from the Treez API.
         This endpoint does not support pagination.
+        Handles empty or unexpected structures gracefully.
         """
         url = f"{self.base_url}/customer/caregivers"
         logging.debug(f"Requesting caregivers: {url}")
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
 
-        data = response.json()
-        records = data.get("data") or []
-
-        if not isinstance(records, list):
-            logging.warning("Unexpected caregivers response structure: %s", data)
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            logging.warning(f"Failed to fetch caregivers: {e}")
             return
 
-        for record in records:
+        caregiver_container = data.get("data", {})
+        caregivers = caregiver_container.get("caregiver_list", [])
+
+        if not isinstance(caregivers, list):
+            logging.warning("Unexpected caregivers response structure: %s", json.dumps(data, indent=2))
+            return
+
+        if not caregivers:
+            logging.info("No caregiver records found.")
+            return
+
+        for record in caregivers:
             yield record
