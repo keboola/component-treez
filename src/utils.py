@@ -1,6 +1,8 @@
 import csv
 import json
 import logging
+from dateutil.parser import isoparse
+from datetime import timezone
 from typing import Generator, Dict
 
 
@@ -51,3 +53,12 @@ def write_output_table_if_data(
     self.write_manifest(table_def)
 
     return True
+
+def normalize_to_utc_iso(date_str: str) -> str:
+    try:
+        dt = isoparse(date_str)
+        if dt.tzinfo is None:
+            return date_str
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        return date_str

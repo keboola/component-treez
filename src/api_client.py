@@ -5,6 +5,7 @@ import logging
 from typing import Generator, Dict, Any
 
 from configuration import Configuration
+from src.utils import normalize_to_utc_iso
 
 DEFAULT_PAGE_SIZE = 50
 API_BASE_URL = "https://api.treez.io/v2.0/dispensary"
@@ -22,6 +23,15 @@ class TreezAPIClient:
             "authorization": self.access_token,
             "client_id": self.client_id
         }
+        self.employees = {}
+        self.ticket_items = []
+        self.ticket_items_discounts = []
+        self.ticket_items_tax = []
+        self.ticket_payments = []
+        self.products_configurable_fields = []
+        self.products_pricing = []
+        self.products_discounts = []
+        self.products_discount_condition_detail = []
 
     def _authenticate(self) -> str:
         url = f"{self.base_url}/config/api/gettokens"
@@ -61,19 +71,68 @@ class TreezAPIClient:
                     break
 
                 records = data.get("ticketList", [])
-
-                if not isinstance(records, list):
-                    logging.warning(
-                        "Unexpected ticket response format for status "
-                        f"'{status}':\n{json.dumps(data, indent=2)}"
-                    )
-                    break
-
-                if not records:
+                if not isinstance(records, list) or not records:
                     logging.info(f"No more tickets for status '{status}' on page {page}.")
                     break
 
                 for record in records:
+                    ticket_id = record.get("ticket_id")
+
+                    for ts_key in ("date_created", "last_updated_at", "date_closed"):
+                        if record.get(ts_key):
+                            record[ts_key] = normalize_to_utc_iso(record[ts_key])
+
+                    created_by = record.pop("created_by_employee", None)
+                    if isinstance(created_by, dict):
+                        emp_id = created_by.get("employee_id")
+                        record["created_by_employee_id"] = emp_id
+                        if emp_id and emp_id not in self.employees:
+                            self.employees[emp_id] = created_by
+
+                    packed_by = record.pop("packed_by_employee", None)
+                    if isinstance(packed_by, dict):
+                        emp_id = packed_by.get("employee_id")
+                        record["packed_by_employee_id"] = emp_id
+                        if emp_id and emp_id not in self.employees:
+                            self.employees[emp_id] = packed_by
+                    else:
+                        record["packed_by_employee_id"] = None
+
+                    items = record.pop("items", [])
+                    for item in items:
+                        item_id = item.get("id")
+                        product_id = item.get("product_id")
+
+                        flat_item = {
+                            "ticket_id": ticket_id,
+                            **{k: v for k, v in item.items() if k not in ("discounts", "tax")}
+                        }
+                        self.ticket_items.append(flat_item)
+
+                        for discount in item.get("discounts", []):
+                            self.ticket_items_discounts.append({
+                                "ticket_id": ticket_id,
+                                "item_id": item_id,
+                                **discount
+                            })
+
+                        for tax in item.get("tax", []):
+                            self.ticket_items_tax.append({
+                                "ticket_id": ticket_id,
+                                "item_id": item_id,
+                                **tax
+                            })
+
+                    payments = record.pop("payments", [])
+                    for payment in payments:
+                        if payment.get("payment_date"):
+                            payment["payment_date"] = normalize_to_utc_iso(payment["payment_date"])
+
+                        self.ticket_payments.append({
+                            "ticket_id": ticket_id,
+                            **payment
+                        })
+
                     yield record
 
                 page += 1
@@ -120,15 +179,44 @@ class TreezAPIClient:
             product_container = data.get("data", {})
             records = product_container.get("product_list", [])
 
-            if not isinstance(records, list):
-                logging.warning(f"Unexpected product response format:\n{json.dumps(data, indent=2)}")
-                break
-
-            if not records:
-                logging.info(f"No more product records at page {page}.")
+            if not isinstance(records, list) or not records:
                 break
 
             for record in records:
+                product_id = record.get("product_id")
+
+                configurable = record.pop("product_configurable_fields", {})
+                if isinstance(configurable, dict):
+                    self.products_configurable_fields.append({
+                        "product_id": product_id,
+                        **configurable
+                    })
+
+                pricing = record.pop("pricing", {})
+                if isinstance(pricing, dict):
+                    self.products_pricing.append({
+                        "product_id": product_id,
+                        **pricing
+                    })
+
+                discounts = record.pop("discounts", [])
+                for discount in discounts:
+                    discount_id = discount.get("discount_id")
+                    condition_details = discount.pop("discount_condition_detail", [])
+                    self.products_discounts.append({
+                        "product_id": product_id,
+                        **discount
+                    })
+
+                    for condition in condition_details:
+                        self.products_discount_condition_detail.append({
+                            "discount_id": discount_id,
+                            **condition
+                        })
+
+                for nested_key in ["product_configurable_fields", "pricing", "discounts"]:
+                    record.pop(nested_key, None)
+
                 yield record
 
             page += 1

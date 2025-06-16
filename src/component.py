@@ -31,11 +31,53 @@ class Component(ComponentBase):
                 logging.warning("Tickets sync skipped: No order_status values provided.")
             else:
                 logging.info(f"Fetching tickets for statuses: {', '.join(config.endpoints.order_status)}")
+                ticket_records = list(api_client.get_tickets_by_status())
+
                 write_output_table_if_data(
                     self,
                     name="tickets",
-                    records=api_client.get_tickets_by_status(),
+                    records=ticket_records,
                     primary_key=["ticket_id"],
+                    incremental=(config.sync_options.sync_mode == "incremental_sync")
+                )
+
+                write_output_table_if_data(
+                    self,
+                    name="employees",
+                    records=list(api_client.employees.values()),
+                    primary_key=["employee_id"],
+                    incremental=(config.sync_options.sync_mode == "incremental_sync")
+                )
+
+                write_output_table_if_data(
+                    self,
+                    name="ticket_items",
+                    records=api_client.ticket_items,
+                    primary_key=["id", "product_id"],
+                    incremental=(config.sync_options.sync_mode == "incremental_sync")
+                )
+
+                write_output_table_if_data(
+                    self,
+                    name="ticket_items_discounts",
+                    records=api_client.ticket_items_discounts,
+                    primary_key=["discount_id", "item_id"],
+                    incremental=(config.sync_options.sync_mode == "incremental_sync")
+                )
+
+                write_output_table_if_data(
+                    self,
+                    name="ticket_items_tax",
+                    records=api_client.ticket_items_tax,
+                    primary_key=["id", "item_id"],
+                    incremental=(config.sync_options.sync_mode == "incremental_sync")
+                )
+
+                write_output_table_if_data(
+                    self,
+                    name="ticket_payments",
+                    records=api_client.ticket_payments,
+                    primary_key=["payment_id"],
                     incremental=(config.sync_options.sync_mode == "incremental_sync")
                 )
 
@@ -51,11 +93,45 @@ class Component(ComponentBase):
 
         if config.endpoints.products:
             logging.info("Fetching products...")
+            product_records = list(api_client.get_products())
+
             write_output_table_if_data(
                 self,
                 name="products",
-                records=api_client.get_products(),
+                records=product_records,
                 primary_key=["product_id"],
+                incremental=(config.sync_options.sync_mode == "incremental_sync")
+            )
+
+            write_output_table_if_data(
+                self,
+                name="products_configurable_fields",
+                records=api_client.products_configurable_fields,
+                primary_key=["product_id"],
+                incremental=(config.sync_options.sync_mode == "incremental_sync")
+            )
+
+            write_output_table_if_data(
+                self,
+                name="products_pricing",
+                records=api_client.products_pricing,
+                primary_key=["product_id"],
+                incremental=(config.sync_options.sync_mode == "incremental_sync")
+            )
+
+            write_output_table_if_data(
+                self,
+                name="products_discounts",
+                records=api_client.products_discounts,
+                primary_key=["product_id", "discount_id"],
+                incremental=(config.sync_options.sync_mode == "incremental_sync")
+            )
+
+            write_output_table_if_data(
+                self,
+                name="products_discount_condition_detail",
+                records=api_client.products_discount_condition_detail,
+                primary_key=["discount_id", "discount_condition_type", "discount_condition_value"],
                 incremental=(config.sync_options.sync_mode == "incremental_sync")
             )
 
