@@ -5,7 +5,7 @@ import logging
 from typing import Generator, Dict, Any
 
 from configuration import Configuration
-from src.utils import normalize_to_utc_iso
+from utils import normalize_to_utc_iso
 
 DEFAULT_PAGE_SIZE = 50
 API_BASE_URL = "https://api.treez.io/v2.0/dispensary"
