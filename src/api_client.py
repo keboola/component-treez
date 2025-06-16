@@ -101,7 +101,6 @@ class TreezAPIClient:
                     items = record.pop("items", [])
                     for item in items:
                         item_id = item.get("id")
-                        product_id = item.get("product_id")
 
                         flat_item = {
                             "ticket_id": ticket_id,

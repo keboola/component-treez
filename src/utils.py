@@ -54,6 +54,7 @@ def write_output_table_if_data(
 
     return True
 
+
 def normalize_to_utc_iso(date_str: str) -> str:
     try:
         dt = isoparse(date_str)
