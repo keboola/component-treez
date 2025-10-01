@@ -199,7 +199,7 @@ class TreezAPIClient:
                     })
 
                 discounts = record.pop("discounts", [])
-                for discount in discounts:
+                for discount in discounts or []:
                     discount_id = discount.get("discount_id")
                     condition_details = discount.pop("discount_condition_detail", [])
                     self.products_discounts.append({
@@ -207,7 +207,7 @@ class TreezAPIClient:
                         **discount
                     })
 
-                    for condition in condition_details:
+                    for condition in condition_details or []:
                         self.products_discount_condition_detail.append({
                             "discount_id": discount_id,
                             **condition
