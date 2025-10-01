@@ -1,0 +1,1 @@
+extractor template long description

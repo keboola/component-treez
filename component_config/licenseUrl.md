@@ -1,0 +1,1 @@
+https://github.com/keboola/component-treez/blob/master/LICENSE.md
